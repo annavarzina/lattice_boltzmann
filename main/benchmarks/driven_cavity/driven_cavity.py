@@ -1,7 +1,5 @@
 import main.schemes.d2q9 as lb
 import main.schemes.grid as gd
-import numpy as np
-import profile
 import main.schemes.plot_and_save as ps
 import os, inspect
 
@@ -41,8 +39,7 @@ if __name__ == "__main__":
     lat_bol = lb.D2Q9(grid=userGrid,
                       iterations=t,
                       boundary=bc,
-                      relaxation_time=tau,
-                      plot_streamlines=True)
+                      relaxation_time=tau)
     print("Viscosity = " + str(lat_bol.viscosity))
     print("Reynolds number = " + str(u_x * rho * n / lat_bol.viscosity))
 

@@ -6,10 +6,11 @@
 .idea/misc.xml
 .idea/modules.xml
 .idea/workspace.xml
-/.idea/vcs.xml
 
 *.csv
 *.pyc
 *.png
 main/benchmarks/poiseuille_flow/fig/
 main/benchmarks/poiseuille_flow/output/
+main/benchmarks/driven_cavity/fig/
+main/benchmarks/driven_cavity/output/
