@@ -13,8 +13,8 @@ def get_path():
 def horizontal_poiseuille_boundaries1(grid):
     boundaries = []
     for i in range(0, grid.width):
-        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_velocity', value=lv.LatticeVelocity(0, 0)))
-        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_velocity', value=lv.LatticeVelocity(0, 0)))
+        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_velocity', value=gd.LatticeVelocity(0, 0)))
+        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_velocity', value=gd.LatticeVelocity(0, 0)))
     for i in range(0, grid.height):
         boundaries.append(gd.Boundary(grid.left_faces[i], 'periodic'))
         boundaries.append(gd.Boundary(grid.right_faces[i], 'periodic'))

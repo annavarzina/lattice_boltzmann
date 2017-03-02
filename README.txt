@@ -9,3 +9,10 @@ LATTICE BOLTZMANN SOLVER
         SIMPLE PIPE FLOW
         DRIVEN CAVITY
         FLOW PAST CYLINDER
+
+AUTHOR: ANNA VARZINA (SCK-CEN)
+
+        anna.varzina@sckcen.be
+        anna.varzina@kuleuven.be
+
+

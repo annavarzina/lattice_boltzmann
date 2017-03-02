@@ -27,25 +27,28 @@ def plot_uy(solution):
     plt.clf()
 
 
-def plot_streamlines(solution, i, title, path):
+def plot_streamlines(solution, title=None, path=None):
+    """ Print and plot streamlines """
     x = np.arange(0, solution.grid.width, solution.grid.dx)
     y = np.arange(0, solution.grid.height, solution.grid.dx)
-    plt.figure(3)
-    plt.clf()
-    ax = plt.subplot()
+    fig, ax = plt.subplots()
     plt.xticks(np.arange(0, solution.grid.width, solution.grid.width / 5))
     plt.yticks(np.arange(0, solution.grid.height, solution.grid.height / 5))
-    plt.title(title + ', i = ' + str(i))
+    title = 'Streamlines' + str(title)
+    plt.title(title)
     strm = ax.streamplot(x, y, solution.u.x, solution.u.y,
                          color=solution.u.x,
                          linewidth=0.5,
                          density=4)
     plt.colorbar(strm.lines)
-    plt.pause(.001)
-    # path = 'C:/Users/avarzina/PycharmProjects/Poiseuille/output'
-    filename = 'figure_' + str(i) + '_' + title + '.png'
+    if path is None:
+        path = get_path()
+    path += '\\fig'
+    filename = 'figure_' + str(title) + '.png'
     filename = os.path.join(path, filename)
-    # mat_plot.savefig(filename)
+    plt.savefig(filename)
+    plt.pause(.001)
+    plt.show()
 
 
 def plot_poiseuille_solution_0y(solution):
@@ -79,11 +82,16 @@ def plot_poiseuille_solution_0x(solution):
 # ==================== save functions ==================== #
 
 
+def get_path():
+    # return os.path.realpath(__file__)
+    return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+
 def save_velocity_x(solution, title=None, path=None):
     filename = 'velocity_x_' + str(title) + '.csv'
     if path is None:
-        path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    path = path + '/output'
+        path = get_path()
+    path = path + '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, 1, 1./solution.grid.width)))
@@ -93,8 +101,8 @@ def save_velocity_x(solution, title=None, path=None):
 def save_velocity_y(solution, title=None, path=None):
     filename = 'velocity_y_' + str(title) + '.csv'
     if path is None:
-        path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    path = path + '/output'
+        path = get_path()
+    path = path + '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, solution.grid.width)))  # np.arange(0, 1, 1. / solution.grid.width
@@ -104,8 +112,8 @@ def save_velocity_y(solution, title=None, path=None):
 def save_density(solution, title=None, path=None):
     filename = 'density_' + str(title) + '.csv'
     if path is None:
-        path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    path = path + '/output'
+        path = get_path()
+    path = path + '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, solution.grid.width)))  # np.arange(0, 1, 1. / solution.grid.width

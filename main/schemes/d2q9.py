@@ -30,8 +30,7 @@ class D2Q9:
                  ext_force=None,
                  boundary=None,
                  reynolds=None,
-                 plot_velocity=True,
-                 plot_streamlines=False):
+                 plot_velocity=True):
 
         global Q, D, e, w, c, c_s2, dt
         w = self.initialize_weights()
@@ -68,8 +67,6 @@ class D2Q9:
         # title = "Re_" + str(self.reynolds) + "_vis_" + str(self.viscosity) + \
         #     "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height)
         # ps.save_data(title)
-        # if plot_streamlines:
-        #     ps.plot_streamlines(iterations, 'pipe')
 
     # ============================== Initialization functions ================================= #
 
