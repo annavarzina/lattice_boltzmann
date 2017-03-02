@@ -27,7 +27,7 @@ def plot_uy(solution):
     plt.clf()
 
 
-def plot_streamlines(solution, title=None, path=None):
+def plot_streamlines(solution, title=None, path=None, save=True):
     """ Print and plot streamlines """
     x = np.arange(0, solution.grid.width, solution.grid.dx)
     y = np.arange(0, solution.grid.height, solution.grid.dx)
@@ -41,15 +41,20 @@ def plot_streamlines(solution, title=None, path=None):
                          linewidth=0.5,
                          density=4)
     plt.colorbar(strm.lines)
-    if path is None:
-        path = get_path()
-    path += '\\fig'
-    filename = 'figure_' + str(title) + '.png'
-    filename = os.path.join(path, filename)
-    plt.savefig(filename)
+    if save:
+        if path is None:
+            path = get_path()
+        path += '\\fig'
+        filename = 'figure_' + str(title) + '.png'
+        filename = os.path.join(path, filename)
+        plt.savefig(filename)
     plt.pause(.001)
     plt.show()
+    # plt.close(fig)
 
+
+def close_figures():
+    plt.hold(False)
 
 def plot_poiseuille_solution_0y(solution):
     l_y = solution.grid.height
@@ -91,7 +96,7 @@ def save_velocity_x(solution, title=None, path=None):
     filename = 'velocity_x_' + str(title) + '.csv'
     if path is None:
         path = get_path()
-    path = path + '\output'
+    path += '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, 1, 1./solution.grid.width)))
@@ -102,7 +107,7 @@ def save_velocity_y(solution, title=None, path=None):
     filename = 'velocity_y_' + str(title) + '.csv'
     if path is None:
         path = get_path()
-    path = path + '\output'
+    path += '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, solution.grid.width)))  # np.arange(0, 1, 1. / solution.grid.width
@@ -113,7 +118,7 @@ def save_density(solution, title=None, path=None):
     filename = 'density_' + str(title) + '.csv'
     if path is None:
         path = get_path()
-    path = path + '\output'
+    path += '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
     csvout.writerow((np.arange(0, solution.grid.width)))  # np.arange(0, 1, 1. / solution.grid.width

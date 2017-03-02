@@ -56,7 +56,7 @@ class D2Q9:
 
             if (i % 10 == 0) & (i > 0):
                 if i % 100 == 0:
-                    print i
+                    print(i)
                 if plot_velocity:
                     ps.plot_ux(self)
                     ps.plot_uy(self)

@@ -36,6 +36,6 @@ if __name__ == "__main__":
 
 
     path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    print path
+    print(path)
     ps.save_all(lat_bol,path=path)
     ps.plot_streamlines(lat_bol, path=path)
