@@ -14,3 +14,7 @@ main/benchmarks/poiseuille_flow/fig/
 main/benchmarks/poiseuille_flow/output/
 main/benchmarks/driven_cavity/fig/
 main/benchmarks/driven_cavity/output/
+main/benchmarks/flow_past_cylinder/fig/
+main/benchmarks/flow_past_cylinder/output/
+main/benchmarks/pipe_flow/fig/
+main/benchmarks/pipe_flow/output/
