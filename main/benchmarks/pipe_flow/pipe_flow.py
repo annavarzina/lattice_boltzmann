@@ -24,7 +24,7 @@ if __name__ == "__main__":
     v = 0.1  # viscosity
     p_left = 2. / 1.  # left pressure
     p_right = 1. / 1.  # right pressure
-    t_f = 1000  # final time
+    t_f = 500  # final time
     tau = v * 3. + 0.5
     user_grid = gd.Grid(width=m, height=n)
     # boundary conditions

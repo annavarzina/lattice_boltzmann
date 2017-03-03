@@ -6,6 +6,7 @@ import main.schemes.plot_and_save as ps
 import os, inspect
 import profile
 
+flag = True
 def get_path():
     # return os.path.realpath(__file__)
     return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -51,16 +52,18 @@ if __name__ == "__main__":
     rho = 1.   # density
     v = 0.1    # viscosity
     tau = v * 3. + 0.5   # relaxation time
-    t = 3000  # final time
+    t = 100  # final time
     gravity = gd.LatticeVelocity(1e-5, 0)  # acceleration by gravity
-
+    path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     userGrid = gd.Grid(n, m)
     bc = horizontal_poiseuille_boundaries2(userGrid)
     lat_bol = lb.D2Q9(grid=userGrid,
                       iterations=t,
                       relaxation_time=tau,
                       ext_force=gravity,
-                      boundary=bc)
+                      boundary=bc,
+                      plot_velocity=True,
+                      path=path)
 
     path = get_path()
     ps.save_all(lat_bol,path=path)

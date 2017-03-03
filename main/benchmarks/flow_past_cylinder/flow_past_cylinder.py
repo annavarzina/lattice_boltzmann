@@ -19,8 +19,8 @@ def flow_past_cylinder_bc(grid, velocity, pressure):
 
 
 if __name__ == "__main__":
-    n = 100                    # width  - 0x
-    m = 30                     # height - 0y
+    n = 500                    # width  - 0x
+    m = 50                     # height - 0y
     rho = 1.                    # density
     v = 0.03                    # viscosity
     tau = v * 3. + 0.5          # relaxation time
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     u = 0.3                     # inflow velocity
     print('Re = ' + str(m*u/v))
     solid = np.zeros((m, n))    # circle shape
-    radius = 20/8                 # radius of circle
+    radius = m/8                 # radius of circle
     x0 = n/7                    # (x0,y0) - center of the circle
     y0 = m/2
     for i in range(0, n):
@@ -36,14 +36,15 @@ if __name__ == "__main__":
             if (j - y0) ** 2 + (i - x0) ** 2 <= radius ** 2:
                 solid[j, i] = 1
     # solid[int(m/2)-20:int(m/2)+20, int(n/10)-20:int(n/10)+20] = 1  # square
+    path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     userGrid = gd.Grid(n, m)
     bc = flow_past_cylinder_bc(userGrid, u, rho)
     lat_bol = lb.D2Q9(grid=userGrid,
                       iterations=t,
                       relaxation_time=tau,
                       boundary=bc,
-                      solid_cells=solid)
-    path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+                      solid_cells=solid,
+                      path=path)
     ps.save_all(lat_bol, path=path)
     ps.plot_streamlines(lat_bol, path=path)
     # print(isinstance(gravity, lv.LatticeVelocity))

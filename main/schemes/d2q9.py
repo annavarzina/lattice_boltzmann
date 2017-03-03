@@ -4,7 +4,7 @@ lattice-boltzmann method.
 """
 
 # todo plot function and use tkinter to visualize
-
+import inspect, os
 import grid as gd
 import numpy as np
 import scipy.integrate as it
@@ -30,7 +30,8 @@ class D2Q9:
                  ext_force=None,
                  boundary=None,
                  reynolds=None,
-                 plot_velocity=True):
+                 plot_velocity=True,
+                 path=None):
 
         global Q, D, e, w, c, c_s2, dt
         w = self.initialize_weights()
@@ -44,7 +45,12 @@ class D2Q9:
         self.viscosity = (1. / 3.) * (self.tau - 0.5)
         self.reynolds = (reynolds, 0)[reynolds is None]
         self.f, self.u, self.rho = self.initialize(self.grid.width, self.grid.height)
-
+        self.stream = np.zeros((self.grid.height, self.grid.width))
+        self.vorticity = np.zeros((self.grid.height, self.grid.width))
+        if path is None:
+            path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        title = ''
+        elapsed_time=0
         start = timer()
         for i in range(0, iterations):
             self.compute_macroscopic()
@@ -55,17 +61,19 @@ class D2Q9:
             self.boundary_conditions()
 
             if (i % 10 == 0) & (i > 0):
+                print(i)
                 if i % 100 == 0:
-                    print(i)
+                    title = "Re_" + str(self.reynolds) + "_vis_" + str(self.viscosity) + \
+                             "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height) + str(i)
+                    ps.plot_streamlines(self, title=title, path=path, save=True)
                 if plot_velocity:
                     ps.plot_ux(self)
                     ps.plot_uy(self)
 
-        end = timer()
-        print(str(end - start) + " sec.")
+        elapsed_time=timer() - start
+        print(str(elapsed_time) + " sec.")
         # self.velocity_stream_and_vorticity()
-        # title = "Re_" + str(self.reynolds) + "_vis_" + str(self.viscosity) + \
-        #     "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height)
+        ps.flag = False
         # ps.save_data(title)
 
     # ============================== Initialization functions ================================= #
@@ -340,9 +348,8 @@ class D2Q9:
         int_u_y = it.simps(u, axis=0)
         int_v_x = it.simps(v, axis=1)
         int_v_y = it.simps(v, axis=0)
-        psi = int_u_y[np.newaxis, :] - int_v_x[:, np.newaxis]  # stream function
-        phi = int_u_x[:, np.newaxis] + int_v_y[np.newaxis, :]  # vorticity
-        pass
+        self.stream = int_u_y[np.newaxis, :] - int_v_x[:, np.newaxis]  # stream function (psi)
+        self.vorticity = int_u_x[:, np.newaxis] + int_v_y[np.newaxis, :]  # vorticity
 
 
 if __name__ == "__main__":
