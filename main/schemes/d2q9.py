@@ -24,6 +24,8 @@ class D2Q9:
     def __init__(self,
                  grid=None,
                  iterations=1000,
+                 eps=None,
+                 check_convergence=False,
                  solid_cells=None,
                  relaxation_time=None,
                  density=None,
@@ -31,11 +33,13 @@ class D2Q9:
                  boundary=None,
                  reynolds=None,
                  plot_velocity=True,
+                 plot_streamlines=True,
                  path=None):
 
         global Q, D, e, w, c, c_s2, dt
         w = self.initialize_weights()
         e = self.initialize_normal_velocities()
+        self.iterations = iterations
         self.grid = (grid, gd.Grid(10, 10))[grid is None]
         self.solid = (solid_cells, np.zeros((self.grid.height, self.grid.width)))[solid_cells is None]
         self.bc = (boundary, gd.default_poiseuille_boundaries(self.grid))[boundary is None]
@@ -50,30 +54,61 @@ class D2Q9:
         if path is None:
             path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         title = ''
-        elapsed_time=0
+        # elapsed_time=0
         start = timer()
-        for i in range(0, iterations):
-            self.compute_macroscopic()
-            if (self.applied_force.x != 0) | (self.applied_force.y != 0):
-                self.external_force()
-            self.collision_step()
-            self.streaming_step()
-            self.boundary_conditions()
-
-            if (i % 10 == 0) & (i > 0):
-                print(i)
-                if i % 100 == 0:
+        if check_convergence:
+            self.iterations = 0
+            eps = (eps, 1e-8)[eps is None]
+            while True:
+                ux_temp = np.copy(self.u.x)
+                uy_temp = np.copy(self.u.y)
+                rho_temp = np.copy(self.rho)
+                self.compute_macroscopic()
+                if (self.applied_force.x != 0) | (self.applied_force.y != 0):
+                    self.external_force()
+                if self.converge(ux=ux_temp, uy=uy_temp, rho=rho_temp, eps=eps):
+                    if self.iterations > 100:
+                        break
+                self.collision_step()
+                self.streaming_step()
+                self.boundary_conditions()
+                if (self.iterations % 50 == 0) & (self.iterations > 0):
+                    print(self.iterations)
                     title = "Re_" + str(self.reynolds) + "_vis_" + str(self.viscosity) + \
-                             "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height) + str(i)
-                    ps.plot_streamlines(self, title=title, path=path, save=True)
-                if plot_velocity:
-                    ps.plot_ux(self)
-                    ps.plot_uy(self)
+                            "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height) + '_t_' + str(self.iterations)
+                    if plot_streamlines:
+                        if self.iterations % 500 == 0:
+                            ps.plot_streamlines(self, title=title, path=path, save=True)
+                    if plot_velocity:
+                        ps.plot_ux(self, title=title, path=path)
+                        ps.plot_uy(self, title=title, path=path)
+                self.iterations +=1
+                print self.iterations
+        else:
+            for i in range(0, self.iterations+1):
+                self.compute_macroscopic()
+                if (self.applied_force.x != 0) | (self.applied_force.y != 0):
+                    self.external_force()
+                self.collision_step()
+                self.streaming_step()
+                self.boundary_conditions()
+
+                if (i % 50 == 0) & (i > 0):
+                    print(i)
+                    title = "Re_" + str(self.reynolds) + "_vis_" + str(self.viscosity) + \
+                            "_grid_" + str(self.grid.width) + 'x' + str(self.grid.height) + '_t_' + str(i)
+                    if plot_streamlines:
+                        if i % 500 == 0:
+                            ps.plot_streamlines(self, title=title, path=path, save=True)
+                    if plot_velocity:
+                        ps.plot_ux(self, title=title, path=path)
+                        ps.plot_uy(self, title=title, path=path)
 
         elapsed_time=timer() - start
         print(str(elapsed_time) + " sec.")
+        # ps.plot_all(self)
         # self.velocity_stream_and_vorticity()
-        ps.flag = False
+        # ps.flag = False
         # ps.save_data(title)
 
     # ============================== Initialization functions ================================= #
@@ -339,6 +374,21 @@ class D2Q9:
         u = max(np.average(abs(self.u.x)), np.average(abs(self.u.y)))
         c_num = u * dt / self.grid.dx  # Courant number
         assert c_num <= 1, "Do not satisfy CFL condition c = " + str(c_num)
+
+    def converge(self, ux, uy, rho, eps):
+        ux -= self.u.x
+        print 'ux ' + str(np.average(np.abs(ux)))
+        if np.average(np.abs(ux)) < eps:
+            uy -= self.u.y
+            print 'uy ' + str(np.average(np.abs(uy)))
+            if np.average(np.abs(uy)) < eps:
+                rho -= self.rho
+                return True
+                # print 'rho ' + str(np.average(np.abs(rho)))
+                # if np.average(np.abs(rho)) < eps:
+                #     return True
+        return False
+
 
     def velocity_stream_and_vorticity(self):
         # todo return vorticity and stream, save them

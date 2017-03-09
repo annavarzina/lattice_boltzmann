@@ -28,29 +28,36 @@ def driven_cavity_boundaries(grid, value):
 
 if __name__ == "__main__":
     # initial parameters
-    n = 500   # width  - 0x
-    m = 500   # length - 0y
+    n = 1001   # width  - 0x
+    m = 1001   # length - 0y
     rho = 1.   # density
-    viscosity = 0.125
-    tau = viscosity * 3. + 0.5
-    t = 60000  # final time
+    viscosity = 0.25
+    tau = viscosity * 3. + 0.15
+    t = 70000  # final time
     u_x = 0.25
-    re = n * u_x / viscosity
+    re = (n - 1) * u_x / viscosity
     print(re)
     velocity = gd.LatticeVelocity(u_x, 0)
     userGrid = gd.Grid(n, m)
     bc = driven_cavity_boundaries(userGrid, velocity)
     path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     lat_bol = lb.D2Q9(grid=userGrid,
-                      iterations=t,
+                      # iterations=t,
+                      check_convergence=True,
+                      eps=1e-6,
                       boundary=bc,
                       relaxation_time=tau,
                       reynolds=re,
+                      plot_velocity=False,
+                      plot_streamlines=False,
                       path=path)
-    print("Viscosity = " + str(lat_bol.viscosity))
-    print("Reynolds number = " + str(u_x * rho * n / lat_bol.viscosity))
+    # print("Viscosity = " + str(lat_bol.viscosity))
+    # print("Reynolds number = " + str(re))
 
+    title = "Re_" + str(lat_bol.reynolds) + "_vis_" + str(lat_bol.viscosity) + \
+            "_grid_" + str(lat_bol.grid.width) + 'x' + str(lat_bol.grid.height) + '_t_' + str(lat_bol.iterations)
     # print(path)
-    ps.save_all(lat_bol,path=path)
-    ps.save_data(lat_bol, lat_bol.stream, 'stream',path=path)
-    ps.save_data(lat_bol, lat_bol.vorticity, 'vorticity',path=path)
+    ps.save_all(lat_bol, path=path, title=title)
+    ps.plot_all(lat_bol)
+    # ps.save_data(lat_bol, lat_bol.stream, 'stream',path=path)
+    # ps.save_data(lat_bol, lat_bol.vorticity, 'vorticity',path=path)

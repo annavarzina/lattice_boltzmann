@@ -7,10 +7,9 @@ import os, inspect
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import matplotlib.patches
-from numpy.matlib import rand
-from pylab import *
+# from pylab import *
+
+
 def get_path():
     # return os.path.realpath(__file__)
     return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -109,7 +108,24 @@ def plot_poiseuille_solution_0x(solution):
     plt.tight_layout()
     plt.show()
 
-
+def plot_all(solution):
+    plt.figure(1)
+    plt.imshow(solution.u.x, origin='lower')
+    plt.colorbar()
+    plt.figure(2)
+    plt.imshow(solution.u.y, origin='lower')
+    plt.colorbar()
+    plt.figure(3)
+    plt.clf()
+    ax = plt.subplot()
+    x = np.arange(0, solution.grid.width, solution.grid.dx)
+    y = np.arange(0, solution.grid.height, solution.grid.dx)
+    strm = ax.streamplot(x, y, solution.u.x, solution.u.y,
+                         color=solution.u.x,
+                         linewidth=0.5,
+                         density=4)
+    plt.colorbar(strm.lines)
+    plt.show()
 def close_figures():
     plt.hold(False)
 
@@ -124,7 +140,7 @@ def save_data(solution, a, parameter_name=None, title=None, path=None):
     path += '\output'
     filename = os.path.join(path, filename)
     csvout = csv.writer(open(filename, "wb"))
-    csvout.writerow((np.arange(0, 1, 1./solution.grid.width)))
+    # csvout.writerow((np.arange(0, 1, 1./solution.grid.width)))
     [csvout.writerow(r) for r in a]
 
 
@@ -144,6 +160,8 @@ def save_all(solution, title=None, path=None):
     save_velocity_x(solution, title, path=path)
     save_velocity_y(solution, title, path=path)
     save_density(solution, title, path=path)
+
+
 
     # fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
     # ax1.plot(...)

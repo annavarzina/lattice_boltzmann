@@ -52,13 +52,14 @@ if __name__ == "__main__":
     rho = 1.   # density
     v = 0.1    # viscosity
     tau = v * 3. + 0.5   # relaxation time
-    t = 100  # final time
+    t = 3675  # final time
     gravity = gd.LatticeVelocity(1e-5, 0)  # acceleration by gravity
     path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     userGrid = gd.Grid(n, m)
     bc = horizontal_poiseuille_boundaries2(userGrid)
     lat_bol = lb.D2Q9(grid=userGrid,
-                      iterations=t,
+                       # iterations=t,
+                      check_convergence=True,
                       relaxation_time=tau,
                       ext_force=gravity,
                       boundary=bc,
@@ -66,8 +67,10 @@ if __name__ == "__main__":
                       path=path)
 
     path = get_path()
-    ps.save_all(lat_bol,path=path)
+    #ps.save_all(lat_bol,path=path)
     ps.plot_poiseuille_solution_0y(lat_bol)
+    ps.plot_poiseuille_solution_0x(lat_bol)
+
 
     # profile.run('print \
     #              lb.D2Q9(grid=userGrid, \
