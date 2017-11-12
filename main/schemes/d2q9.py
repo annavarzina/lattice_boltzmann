@@ -403,6 +403,17 @@ class D2Q9:
 
 
 if __name__ == "__main__":
+    n = 4  # width  - lx
+    m = 4  # height - ly
+    t = 5  # final time
+    solid = np.zeros((Q, n, m))
+    userGrid = gd.Grid(n, m)
+    lat_bol = D2Q9(grid=userGrid,
+                   iterations=t,
+                   plot_velocity=False)
+    print(lat_bol.__dict__)
+
+    '''
     n = 30              # width  - lx
     m = 60              # height - ly
     t = 3000            # final time
@@ -415,3 +426,5 @@ if __name__ == "__main__":
                    ext_force=gravity,
                    plot_velocity=False)
     ps.plot_poiseuille_solution_0x(lat_bol)
+    '''
+
