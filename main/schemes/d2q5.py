@@ -23,7 +23,7 @@ c = 1.  # propagation speed
 c_s2 = 1. / 3.  # squared speed of sound
 force = gd.LatticeVelocity(0, 0)  # external force
 
-
+# TODO class for initialization
 def initialize_weights():
     return np.array([1. / 3.,
                      1. / 6.,
@@ -37,7 +37,7 @@ def initialize_normal_velocities():
     e_y = np.array([0, 0, 1, 0, -1])
     return gd.LatticeVelocity(e_x, e_y)
 
-
+# TODO class for mass balance (mass calculation, liquid mass, Solid mass, Flux mass)
 class D2Q5:
     def __init__(self,
                  grid=None,
@@ -70,12 +70,12 @@ class D2Q5:
         self.flux = gd.LatticeVelocity(np.zeros((self.grid.height, self.grid.width)),
                                        np.zeros((self.grid.height, self.grid.width)))
         self.bc = (boundary, gd.default_poiseuille_boundaries(self.grid))[boundary is None]
-        # TODO function run()
         self.run()
 
     def run(self):
         start = timer()
         for i in range(0, self.iterations):
+
             self.collision()
             self.streaming()
             self.boundary_conditions()
@@ -83,23 +83,28 @@ class D2Q5:
             if (self.source.x != 0) | (self.source.y != 0):
                 self.source()
             np.set_printoptions(precision=3)
-            print('Iteration %s' % (i + 1))
-            print('Concentration:')
-            print(self.conc)
-            print('Flux X:')
-            print(self.flux.x)
-            print('Flux Y:')
-            print(self.flux.y)
+            if(False):
+                print('Iteration %s' % (i + 1))
+                print('Concentration:')
+                print(self.conc)
+                #'''
+                print('Flux X:')
+                print(self.flux.x)
+                print('Flux Y:')
+                print(self.flux.y)
+                #'''
             print('Liquid mass is %s [mol]' %np.sum(self.conc))
         end = timer()
         print(str(end - start) + " sec.")
+        print(self.conc)
 
     def macroscopic(self):
         """
         Calculates concentration and flux
         """
+
         omega = 1./2./self.tau
-        self.conc = self.f.sum(axis=0)
+        self.conc = self.f[0,:,:]+self.f[1,:,:]+self.f[2,:,:]+self.f[3,:,:]+self.f[4,:,:]#self.f.sum(axis=0)
         self.flux.x = omega * self.conc * self.u.x + (1- omega) * (self.f[1, :, :] - self.f[3, :, :])
         self.flux.y = omega * self.conc * self.u.y + (1- omega) * (self.f[2, :, :] - self.f[4, :, :])
         # todo add obstacles!
@@ -117,7 +122,7 @@ class D2Q5:
         Collision step
         """
         f_eq = self.compute_f_equilibrium()
-        omega = 1. / tau # omega # TODO rename a to omega
+        omega = 1. / tau # omega
         self.f = (1. - omega) * self.f + omega * f_eq
 
     def streaming(self):
@@ -130,80 +135,78 @@ class D2Q5:
 
     def boundary_conditions(self):
         bc_bounceback = [b for b in self.bc if b.type is 'bounceback']
-        # TODO Zoe He flux boundary
-        # bc_zoe_he_velocity = [b for b in self.bc if b.type is 'zoe_he_flux']
+        bc_zoe_he_flux = [b for b in self.bc if b.type is 'zoe_he_flux']
         bc_zoe_he_conc = [b for b in self.bc if b.type is 'zoe_he_conc']
-        bc_neumann = [b for b in self.bc if b.type is 'neumann']
 
         if len(bc_bounceback) != 0:
+            bc_bottom, bc_top, bc_left, bc_right = self.define_boundaries(bc_bounceback)
             temp_f = np.copy(self.f[:, :, :])
+            if len(bc_top) != 0:
+                rows, columns = self.define_row_columns(bc_top, 1)
+                self.f[4, rows, columns] = temp_f[2, rows, columns]
+            if len(bc_bottom) != 0:
+                rows, columns = self.define_row_columns(bc_bottom, 0)
+                self.f[2, rows, columns] = temp_f[4, rows, columns]
+            if len(bc_right) != 0:
+                rows, columns = self.define_row_columns(bc_right, 3)
+                self.f[3, rows, columns] = temp_f[1, rows, columns]
+            if len(bc_left) != 0:
+                rows, columns = self.define_row_columns(bc_left, 2)
+                self.f[1, rows, columns] = temp_f[3, rows, columns]
+            '''
             rows, columns = self.define_row_columns(bc_bounceback, 0)
-            # rows = [bt.face / 4 / self.grid.width for bt in bc_bounceback]
-            # columns = [(bt.face/ 4) % self.grid.width for bt in bc_bounceback]
-            # i = [0, 3, 4, 1, 2]  # bounceback order
             self.f[1, rows, columns] = temp_f[3, rows, columns]
             self.f[2, rows, columns] = temp_f[4, rows, columns]
             self.f[3, rows, columns] = temp_f[1, rows, columns]
             self.f[4, rows, columns] = temp_f[2, rows, columns]
+            '''
+
+        if len(bc_zoe_he_flux) != 0:
+            bc_bottom, bc_top, bc_left, bc_right = self.define_boundaries(bc_zoe_he_flux)
+            if len(bc_top) != 0:
+                rows, columns = self.define_row_columns(bc_top, 1)
+                flux_bc = [bt.value for bt in bc_top]
+                flux_bc = [- (2. / 3.) * x for x in flux_bc]
+                self.f[4, rows, columns] =  flux_bc + self.f[2, rows, columns]
+            if len(bc_bottom) != 0:
+                rows, columns = self.define_row_columns(bc_bottom, 0)
+                flux_bc = [bt.value for bt in bc_bottom]
+                flux_bc = [- (2. / 3.) * x for x in flux_bc]
+                self.f[2, rows, columns] =flux_bc + self.f[4, rows, columns]
+            if len(bc_right) != 0:
+                rows, columns = self.define_row_columns(bc_right, 3)
+                flux_bc = [bt.value for bt in bc_right]
+                flux_bc = [- (2. / 3.) * x for x in flux_bc]
+                self.f[3, rows, columns] =  flux_bc + self.f[1, rows, columns]
+            if len(bc_left) != 0:
+                rows, columns = self.define_row_columns(bc_left, 2)
+                flux_bc = [bt.value for bt in bc_left]
+                flux_bc = [- (2. / 3.) * x for x in flux_bc]
+                self.f[1, rows, columns] = flux_bc + self.f[3, rows, columns]
 
         if len(bc_zoe_he_conc) != 0:
             bc_bottom, bc_top, bc_left, bc_right = self.define_boundaries(bc_zoe_he_conc)
             if len(bc_top) != 0:
                 rows, columns = self.define_row_columns(bc_top, 1)
                 conc_bc = [bt.value for bt in bc_top]
-                conc_bc = [x * 2. / 3. for x in conc_bc]
-                self.f[4, rows, columns] = conc_bc - self.f[2, rows, columns]
+                self.f[4, rows, columns] = conc_bc - self.f[0, rows, columns] - self.f[1, rows, columns] - \
+                                           self.f[2, rows, columns] - self.f[3, rows, columns]
             if len(bc_bottom) != 0:
                 rows, columns = self.define_row_columns(bc_bottom, 0)
                 conc_bc = [bt.value for bt in bc_bottom]
-                conc_bc = [x * 2. / 3. for x in conc_bc]
-                self.f[2, rows, columns] = conc_bc - self.f[4, rows, columns]
+                self.f[2, rows, columns] = conc_bc - self.f[0, rows, columns] - self.f[1, rows, columns] - \
+                                           self.f[4, rows, columns] - self.f[3, rows, columns]
             if len(bc_right) != 0:
                 rows, columns = self.define_row_columns(bc_right, 3)
                 conc_bc = [bt.value for bt in bc_right]
-                conc_bc = [x * 2. / 3. for x in conc_bc]
-                self.f[3, rows, columns] = conc_bc - self.f[1, rows, columns]
+                self.f[3, rows, columns] = conc_bc - self.f[0, rows, columns] - self.f[1, rows, columns] - \
+                                           self.f[2, rows, columns] - self.f[4, rows, columns]
             if len(bc_left) != 0:
                 rows, columns = self.define_row_columns(bc_left, 2)
                 conc_bc = [bt.value for bt in bc_left]
                 conc_bc = [x * 2. / 3. for x in conc_bc]
-                self.f[1, rows, columns] = conc_bc - self.f[3, rows, columns]
-
-        if len(bc_neumann) != 0:
-            bc_bottom, bc_top, bc_left, bc_right = self.define_boundaries(bc_neumann)
-            # todo check the total sum of velocities on boundaries, check is there are pressure boundaries
-            if len(bc_top) != 0:
-                rows, columns = self.define_row_columns(bc_top, 1)
-                u0 = [bt.value for bt in bc_top]
-                rho0 = ((self.f[0, rows, columns] + self.f[1, rows, columns] +
-                         self.f[3, rows, columns]) + 2 *
-                        self.f[2, rows, columns]) / (1. + np.array(u0))
-                ru = rho0 * np.array(u0)
-                self.f[4, rows, columns] = self.f[2, rows, columns] - (2. / 3.) * ru
-            if len(bc_bottom) != 0:
-                rows, columns = self.define_row_columns(bc_bottom, 0)
-                u0 = [bb.value for bb in bc_bottom]
-                rho0 = ((self.f[0, rows, columns] + self.f[1, rows, columns] +
-                         self.f[3, rows, columns]) + 2 *
-                        self.f[4, rows, columns]) / (1. - np.array(u0))
-                ru = rho0 * np.array(u0)
-                self.f[2, rows, columns] = self.f[4, rows, columns] + (2. / 3.) * ru
-            if len(bc_right) != 0:
-                rows, columns = self.define_row_columns(bc_right, 3)
-                u0 = [br.value for br in bc_right]
-                rho0 = ((self.f[0, rows, columns] + self.f[2, rows, columns] +
-                         self.f[4, rows, columns]) + 2 *
-                        self.f[1, rows, columns]) / (1. + np.array(u0))
-                ru = rho0 * np.array(u0)
-                self.f[3, rows, columns] = self.f[1, rows, columns] - (2. / 3.) * ru
-            if len(bc_left) != 0:
-                rows, columns = self.define_row_columns(bc_left, 2)
-                u0 = [bl.value for bl in bc_left]
-                rho0 = ((self.f[0, rows, columns] + self.f[2, rows, columns] +
-                         self.f[4, rows, columns]) + 2 *
-                        self.f[3, rows, columns]) / (1. - np.array(u0))
-                ru = rho0 * np.array(u0)
-                self.f[1, rows, columns] = self.f[3, rows, columns] + (2. / 3.) * ru
+                self.f[1, rows, columns] = conc_bc - self.f[0, rows, columns] - self.f[2, rows, columns] - \
+                                           self.f[3, rows, columns] - self.f[4, rows, columns]
 
     @staticmethod
     def define_boundaries(bc):
@@ -213,9 +216,9 @@ class D2Q5:
         bc_right = [bn for bn in bc if bn.face % 4 == 3]
         return bc_bottom, bc_top, bc_left, bc_right
 
-    def define_row_columns(self, bc, d):
-        rows = [(bt.face - d) / 4 / self.grid.width for bt in bc]
-        columns = [((bt.face - d) / 4) % self.grid.width for bt in bc]
+    def define_row_columns(self, b_c, d):
+        rows = [(bt.face - d) / 4 / self.grid.width for bt in b_c]
+        columns = [((bt.face - d) / 4) % self.grid.width for bt in b_c]
         return rows, columns
 
     def compute_f_equilibrium(self):
@@ -227,11 +230,11 @@ class D2Q5:
         :return: equilibrium distribution function
         """
         f_eq = np.zeros((Q, self.grid.height, self.grid.width))
-        f_eq[0,None, None] = w[0, None, None] * self.conc
-        f_eq[1,None, None] = w[1, None, None] * self.conc * (1. + 3. * self.u.x)
-        f_eq[2,None, None] = w[2, None, None] * self.conc * (1. + 3. * self.u.y)
-        f_eq[3,None, None] = w[3, None, None] * self.conc * (1. - 3. * self.u.x)
-        f_eq[4,None, None] = w[4, None, None] * self.conc * (1. - 3. * self.u.y)
+        f_eq[0, None, None] = w[0, None, None] * self.conc
+        f_eq[1, None, None] = w[1, None, None] * self.conc * (1. + 3. * self.u.x)
+        f_eq[2, None, None] = w[2, None, None] * self.conc * (1. + 3. * self.u.y)
+        f_eq[3, None, None] = w[3, None, None] * self.conc * (1. - 3. * self.u.x)
+        f_eq[4, None, None] = w[4, None, None] * self.conc * (1. - 3. * self.u.y)
         return f_eq
 
 
@@ -247,16 +250,38 @@ def plotting(solution):
 
     mat_plot.show()
 
+
 def concentration_boundaries(grid):
     boundaries = []
     for i in range(0, grid.width):
-        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_conc', value = 0.))
-        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_conc', value = 0.))
+        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_conc', value=0.))
+        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_conc', value=0.))
     for i in range(0, grid.height):
-        boundaries.append(gd.Boundary(grid.left_faces[i], 'zoe_he_conc', value = 0.))
-        boundaries.append(gd.Boundary(grid.right_faces[i], 'zoe_he_conc', value = 0.))
+        boundaries.append(gd.Boundary(grid.left_faces[i], 'zoe_he_conc', value=0.))
+        boundaries.append(gd.Boundary(grid.right_faces[i], 'zoe_he_conc', value=0.))
     return boundaries
 
+
+def zero_flux_boundaries(grid):
+    boundaries = []
+    for i in range(0, grid.width):
+        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_flux', value=0.))
+        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_flux', value=0.))
+    for i in range(0, grid.height):
+        boundaries.append(gd.Boundary(grid.left_faces[i], 'zoe_he_flux', value=0.))
+        boundaries.append(gd.Boundary(grid.right_faces[i], 'zoe_he_flux', value=0.))
+    return boundaries
+
+
+def conc_flux_boundaries(grid):
+    boundaries = []
+    for i in range(0, grid.width):
+        boundaries.append(gd.Boundary(grid.bottom_faces[i], 'zoe_he_flux', value=0.))
+        boundaries.append(gd.Boundary(grid.top_faces[i], 'zoe_he_flux', value=0.))
+    for i in range(0, grid.height):
+        boundaries.append(gd.Boundary(grid.left_faces[i], 'zoe_he_conc', value=2.))
+        boundaries.append(gd.Boundary(grid.right_faces[i], 'zoe_he_conc', value=1.))
+    return boundaries
 
 def bb_boundaries(grid):
     boundaries = []
@@ -269,21 +294,30 @@ def bb_boundaries(grid):
     return boundaries
 
 if __name__ == "__main__":
-    n = 3 #5  # width  - lx
-    m = 3 #5  # height - ly
+    #'''
+    n = 5 # width  - lx
+    m = 5 # height - ly
+    t = 1000 # final time
+    c_init = np.ones((n, m))*2
+    #'''
+    '''
+    n = 3  # width  - lx
+    m = 3  # height - ly
     t = 5  # final time
     c_init = np.zeros((n, m))
     c_init[1, 1] = 1
-    #c_init[2, 2] = 1
+    '''
     solid = np.zeros((Q, n, m))
     userGrid = gd.Grid(n, m)
-    bc = bb_boundaries(userGrid)
-    #bc = concentration_boundaries(userGrid)
+    #bc = bb_boundaries(userGrid)
+    bc = conc_flux_boundaries(userGrid)
+    #bc = zero_flux_boundaries(userGrid)
+    # bc = concentration_boundaries(userGrid)
     lat_bol = D2Q5(grid=userGrid,
                    t_final=t,
                    concentration=c_init,
                    boundary=bc)
-    #print(lat_bol.__dict__)
+    # print(lat_bol.__dict__)
     '''
     n = 31  # width  - lx
     m = 51  # height - ly
